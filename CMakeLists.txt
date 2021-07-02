@@ -48,7 +48,6 @@ target_link_libraries(birdeye_viz PUBLIC
         opencv_core
         opencv_imgproc
         opencv_highgui
-        dw
         )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
