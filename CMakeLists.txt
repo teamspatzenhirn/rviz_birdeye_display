@@ -28,7 +28,6 @@ endforeach ()
 
 set(birdeye_viz_source_files
         src/birdeye_viz/BirdeyeDisplay.cpp
-        src/birdeye_viz/backward.cpp
         )
 
 add_library(birdeye_viz SHARED
