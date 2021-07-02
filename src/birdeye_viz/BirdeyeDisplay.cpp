@@ -12,17 +12,12 @@
 #include <OgreTechnique.h>
 #include <OgreTextureManager.h>
 #include <opencv2/opencv.hpp>
+#include <rviz_rendering/material_manager.hpp>
 #include <sensor_msgs/image_encodings.hpp>
-
-#include "rviz_rendering/material_manager.hpp"
-
-constexpr auto WIDTH = 440;
-constexpr auto HEIGHT = 800;
 
 constexpr auto RESOURCEGROUP_NAME = "rviz_rendering";
 
 namespace birdeye_viz::displays {
-
 
     int cvTypeFromEncoding(const std::string &encoding) {
         using namespace sensor_msgs::image_encodings;
@@ -38,29 +33,19 @@ namespace birdeye_viz::displays {
     }
 
 
-    BirdeyeDisplay::BirdeyeDisplay() {
+    std::string parentTopic(const std::string &topic) {
+        return topic.substr(0, topic.find_last_of('/'));
+    }
 
+    BirdeyeDisplay::BirdeyeDisplay() {
         std::string message_type = rosidl_generator_traits::name<ImageMsg>();
         topic_property_->setMessageType(QString::fromStdString(message_type));
         topic_property_->setDescription(QString::fromStdString(message_type) + " topic to subscribe to.");
 
-
         static int birdeye_count = 0;
         birdeye_count++;
-        std::string material_name = "BirdeyeMaterial" + std::to_string(birdeye_count);
-        std::string texture_name = "BirdeyeTexture" + std::to_string(birdeye_count);
-
-        texture = Ogre::TextureManager::getSingleton().createManual(texture_name, RESOURCEGROUP_NAME, Ogre::TEX_TYPE_2D,
-                                                                    WIDTH, HEIGHT, 1, 0, Ogre::PF_BYTE_BGRA,
-                                                                    Ogre::TU_DYNAMIC_WRITE_ONLY_DISCARDABLE);
-
-        material = rviz_rendering::MaterialManager::createMaterialWithNoLighting(material_name);
-
-        auto rpass = material->getTechniques()[0]->getPasses()[0];
-        rpass->createTextureUnitState(texture_name);
-        rpass->setCullingMode(Ogre::CULL_NONE);
-        rpass->setEmissive(Ogre::ColourValue::White);
-        rpass->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
+        materialName = "BirdeyeMaterial" + std::to_string(birdeye_count);
+        textureName = "BirdeyeTexture" + std::to_string(birdeye_count);
     }
 
     BirdeyeDisplay::~BirdeyeDisplay() {
@@ -68,6 +53,29 @@ namespace birdeye_viz::displays {
             scene_manager_->destroyManualObject(imageObject);
         }
         unsubscribe();
+    }
+
+    void BirdeyeDisplay::createTextures() {
+        assert(currentBirdeyeParam.has_value());
+
+        if (currentBirdeyeParam->height == currentHeight and currentBirdeyeParam->width == currentWidth) {
+            return;
+        }
+
+        texture = Ogre::TextureManager::getSingleton().createManual(
+                textureName, RESOURCEGROUP_NAME, Ogre::TEX_TYPE_2D, currentBirdeyeParam->width,
+                currentBirdeyeParam->height, 1, 0, Ogre::PF_BYTE_BGRA, Ogre::TU_DYNAMIC_WRITE_ONLY_DISCARDABLE);
+
+        material = rviz_rendering::MaterialManager::createMaterialWithNoLighting(materialName);
+
+        auto rpass = material->getTechniques()[0]->getPasses()[0];
+        rpass->createTextureUnitState(textureName);
+        rpass->setCullingMode(Ogre::CULL_NONE);
+        rpass->setEmissive(Ogre::ColourValue::White);
+        rpass->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
+
+        currentHeight = currentBirdeyeParam->height;
+        currentWidth = currentBirdeyeParam->width;
     }
 
     void BirdeyeDisplay::onInitialize() {
@@ -81,15 +89,22 @@ namespace birdeye_viz::displays {
     void BirdeyeDisplay::reset() {
         _RosTopicDisplay::reset();
         imageObject->clear();
+        messagesReceived = 0;
     }
 
     void BirdeyeDisplay::processMessage(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
 
+        if (not currentBirdeyeParam.has_value()) {
+            setStatus(rviz_common::properties::StatusProperty::Error, "Params", QString("No BirdEyeParam"));
+            return;
+        }
+        setStatus(rviz_common::properties::StatusProperty::Ok, "Params", QString("OK"));
+
         Ogre::Vector3 position;
         Ogre::Quaternion orientation;
-        if (!context_->getFrameManager()->getTransform(currentBirdeyeParam.header.frame_id, msg->header.stamp, position,
-                                                       orientation)) {
-            setMissingTransformToFixedFrame(currentBirdeyeParam.header.frame_id);
+        if (!context_->getFrameManager()->getTransform(currentBirdeyeParam->header.frame_id, msg->header.stamp,
+                                                       position, orientation)) {
+            setMissingTransformToFixedFrame(currentBirdeyeParam->header.frame_id);
             return;
         }
         setTransformOk();
@@ -97,15 +112,16 @@ namespace birdeye_viz::displays {
         scene_node_->setPosition(position);
         scene_node_->setOrientation(orientation);
 
-        imageObject->clear();
+        createTextures();
 
+        imageObject->clear();
         imageObject->estimateVertexCount(4);
         imageObject->begin(material->getName(), Ogre::RenderOperation::OT_TRIANGLE_FAN, "rviz_rendering");
 
-        auto xOffset = currentBirdeyeParam.offset.x / currentBirdeyeParam.resolution;
-        auto yOffset = currentBirdeyeParam.offset.y / currentBirdeyeParam.resolution;
-        auto height = currentBirdeyeParam.height / currentBirdeyeParam.resolution;
-        auto width = currentBirdeyeParam.width / currentBirdeyeParam.resolution;
+        auto xOffset = currentBirdeyeParam->offset.x / currentBirdeyeParam->resolution;
+        auto yOffset = currentBirdeyeParam->offset.y / currentBirdeyeParam->resolution;
+        auto height = currentBirdeyeParam->height / currentBirdeyeParam->resolution;
+        auto width = currentBirdeyeParam->width / currentBirdeyeParam->resolution;
 
         /**
          *        birdeye-height
@@ -142,31 +158,25 @@ namespace birdeye_viz::displays {
         Ogre::HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
 
         // Lock the pixel buffer and get a pixel box
-        pixelBuffer->lock(Ogre::HardwareBuffer::HBL_DISCARD); // for best performance use HBL_DISCARD!
+        pixelBuffer->lock(Ogre::HardwareBuffer::HBL_DISCARD);
         const Ogre::PixelBox &pixelBox = pixelBuffer->getCurrentLock();
 
-        cv::Mat m(msg->height, msg->width, cvTypeFromEncoding(msg->encoding), (void *) msg->data.data(), msg->step);
+        cv::Mat input(msg->height, msg->width, cvTypeFromEncoding(msg->encoding), (void *) msg->data.data(), msg->step);
 
-        assert(msg->width == 440);
-        assert(msg->height == 800);
+        cv::Mat textureMat(currentHeight, currentWidth, CV_8UC4, (void *) pixelBox.data);
 
-
-        cv::Mat texm(msg->height, msg->width, CV_8UC4, (void *) pixelBox.data); //), pixelBox.rowPitch);
-        std::cout << pixelBox.rowPitch << std::endl;
-
-
-        assert(m.type() == CV_8UC1);
-        cv::cvtColor(m, texm, cv::COLOR_GRAY2BGRA, 4);
-
-
-        std::cout << cv::mean(texm) << std::endl;
+        if (sensor_msgs::image_encodings::numChannels(msg->encoding) == 1) {
+            cv::cvtColor(input, textureMat, cv::COLOR_GRAY2BGRA, 4);
+        } else if (msg->encoding.rfind("rgb", 0) == 0) {
+            cv::cvtColor(input, textureMat, cv::COLOR_RGB2BGRA, 4);
+        } else if (msg->encoding.rfind("bgr", 0) == 0) {
+            cv::cvtColor(input, textureMat, cv::COLOR_BGR2BGRA, 4);
+        } else {
+            throw std::runtime_error{"Unknown encoding: " + msg->encoding};
+        }
 
         // Unlock the pixel buffer
         pixelBuffer->unlock();
-    }
-
-    std::string parentTopic(const std::string &topic) {
-        return topic.substr(0, topic.find_last_of('/'));
     }
 
     void BirdeyeDisplay::subscribe() {
@@ -190,9 +200,6 @@ namespace birdeye_viz::displays {
                     [this](ParamMsg ::ConstSharedPtr msg) { this->currentBirdeyeParam = *msg; });
 
             setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
-        } catch (rclcpp::exceptions::InvalidTopicNameError &e) {
-            setStatus(rviz_common::properties::StatusProperty::Error, "Topic",
-                      QString("Error subscribing: ") + e.what());
         } catch (std::exception &e) {
             setStatus(rviz_common::properties::StatusProperty::Error, "Topic",
                       QString("Error subscribing: ") + e.what());
@@ -220,15 +227,22 @@ namespace birdeye_viz::displays {
             return;
         }
 
-        ++messages_received_;
+        ++messagesReceived;
         setStatus(rviz_common::properties::StatusProperty::Ok, "Topic",
-                  QString::number(messages_received_) + " messages received");
+                  QString::number(messagesReceived) + " messages received");
 
         processMessage(msg);
     }
 
-    void BirdeyeDisplay::setTopic(const QString &topic, const QString &datatype) {
+    void BirdeyeDisplay::setTopic(const QString &topic, const QString & /* datatype */) {
         topic_property_->setString(topic);
+    }
+    void BirdeyeDisplay::onEnable() {
+        subscribe();
+    }
+    void BirdeyeDisplay::onDisable() {
+        unsubscribe();
+        reset();
     }
 
 
