@@ -1,0 +1,10 @@
+<library path="birdeye_viz">
+    <class name="birdeye_viz/Birdeye"
+           type="birdeye_viz::displays::BirdeyeDisplay"
+           base_class_type="rviz_common::Display">
+        <description>
+            Displays birdview image in the 3d view
+        </description>
+        <message_type>sensor_msgs/msg/Image</message_type>
+    </class>
+</library>
