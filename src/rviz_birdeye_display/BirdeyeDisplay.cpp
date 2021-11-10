@@ -237,9 +237,11 @@ namespace rviz_birdeye_display::displays {
     void BirdeyeDisplay::setTopic(const QString &topic, const QString & /* datatype */) {
         topic_property_->setString(topic);
     }
+
     void BirdeyeDisplay::onEnable() {
         subscribe();
     }
+
     void BirdeyeDisplay::onDisable() {
         unsubscribe();
         reset();
