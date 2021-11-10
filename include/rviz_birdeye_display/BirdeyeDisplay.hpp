@@ -11,11 +11,11 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <spatz_interfaces/msg/bird_eye_param.hpp>
 
-#include "birdeye_viz/visibility_control.hpp"
+#include "rviz_birdeye_display/visibility_control.hpp"
 
-namespace birdeye_viz::displays {
+namespace rviz_birdeye_display::displays {
 
-    class BIRDEYE_VIZ_PUBLIC BirdeyeDisplay : public rviz_common::_RosTopicDisplay {
+    class rviz_birdeye_display_PUBLIC BirdeyeDisplay : public rviz_common::_RosTopicDisplay {
         Q_OBJECT
 
         using ImageMsg = sensor_msgs::msg::Image;
@@ -65,7 +65,7 @@ namespace birdeye_viz::displays {
         void onDisable() override;
     };
 
-} // namespace birdeye_viz::displays
+} // namespace rviz_birdeye_display::displays
 
 
 #endif // VIZ_BIRDEYEDISPLAY_HPP

@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(birdeye_viz)
-
-if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif ()
+project(rviz_birdeye_display)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -18,31 +14,34 @@ find_package(sensor_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 
 
-set(birdeye_viz_headers_to_moc
-        include/birdeye_viz/BirdeyeDisplay.hpp
+set(rviz_birdeye_display_headers_to_moc
+        include/rviz_birdeye_display/BirdeyeDisplay.hpp
         )
 
-foreach (header "${birdeye_viz_headers_to_moc}")
-    qt5_wrap_cpp(birdeye_viz_moc_files "${header}")
+foreach (header "${rviz_birdeye_display_headers_to_moc}")
+    qt5_wrap_cpp(rviz_birdeye_display_moc_files "${header}")
 endforeach ()
 
-set(birdeye_viz_source_files
-        src/birdeye_viz/BirdeyeDisplay.cpp
+set(rviz_birdeye_display_source_files
+        src/rviz_birdeye_display/BirdeyeDisplay.cpp
         )
 
-add_library(birdeye_viz SHARED
-        ${birdeye_viz_moc_files}
-        ${birdeye_viz_source_files}
+add_library(rviz_birdeye_display SHARED
+        ${rviz_birdeye_display_moc_files}
+        ${rviz_birdeye_display_source_files}
         )
 
-target_include_directories(birdeye_viz PUBLIC
+set_property(TARGET rviz_birdeye_display PROPERTY CXX_STANDARD 20)
+target_compile_options(rviz_birdeye_display PRIVATE -Wall -Wextra -Wpedantic)
+
+target_include_directories(rviz_birdeye_display PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
         ${Qt5Widgets_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
         )
 
-target_link_libraries(birdeye_viz PUBLIC
+target_link_libraries(rviz_birdeye_display PUBLIC
         rviz_ogre_vendor::OgreMain
         rviz_ogre_vendor::OgreOverlay
         opencv_core
@@ -52,14 +51,14 @@ target_link_libraries(birdeye_viz PUBLIC
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(birdeye_viz PRIVATE "BIRDEYE_VIZ_BUILDING_LIBRARY")
+target_compile_definitions(rviz_birdeye_display PRIVATE "rviz_birdeye_display_BUILDING_LIBRARY")
 
 # prevent pluginlib from using boost
-target_compile_definitions(birdeye_viz PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(rviz_birdeye_display PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 
-ament_target_dependencies(birdeye_viz
+ament_target_dependencies(rviz_birdeye_display
         PUBLIC
         sensor_msgs
         spatz_interfaces
@@ -68,7 +67,7 @@ ament_target_dependencies(birdeye_viz
         )
 
 ament_export_include_directories(include)
-ament_export_targets(birdeye_viz HAS_LIBRARY_TARGET)
+ament_export_targets(rviz_birdeye_display HAS_LIBRARY_TARGET)
 ament_export_dependencies(
         rviz_common
         sensor_msgs
@@ -77,8 +76,8 @@ ament_export_dependencies(
 )
 
 install(
-        TARGETS birdeye_viz
-        EXPORT birdeye_viz
+        TARGETS rviz_birdeye_display
+        EXPORT rviz_birdeye_display
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
@@ -91,5 +90,5 @@ install(
 )
 
 ament_package(
-        CONFIG_EXTRAS "birdeye_viz-extras.cmake"
+        CONFIG_EXTRAS "rviz_birdeye_display-extras.cmake"
 )

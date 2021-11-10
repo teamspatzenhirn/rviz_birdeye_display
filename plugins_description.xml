@@ -1,6 +1,6 @@
-<library path="birdeye_viz">
-    <class name="birdeye_viz/Birdeye"
-           type="birdeye_viz::displays::BirdeyeDisplay"
+<library path="rviz_birdeye_display">
+    <class name="rviz_birdeye_display/Birdeye"
+           type="rviz_birdeye_display::displays::BirdeyeDisplay"
            base_class_type="rviz_common::Display">
         <description>
             Displays birdview image in the 3d view

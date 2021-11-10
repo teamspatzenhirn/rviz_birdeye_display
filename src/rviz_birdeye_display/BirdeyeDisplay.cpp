@@ -2,7 +2,7 @@
 // Created by jonas on 6/30/21.
 //
 
-#include "birdeye_viz/BirdeyeDisplay.hpp"
+#include "rviz_birdeye_display/BirdeyeDisplay.hpp"
 
 #include <OgreBillboardSet.h>
 #include <OgreMaterialManager.h>
@@ -17,7 +17,7 @@
 
 constexpr auto RESOURCEGROUP_NAME = "rviz_rendering";
 
-namespace birdeye_viz::displays {
+namespace rviz_birdeye_display::displays {
 
     int cvTypeFromEncoding(const std::string &encoding) {
         using namespace sensor_msgs::image_encodings;
@@ -246,7 +246,7 @@ namespace birdeye_viz::displays {
     }
 
 
-} // namespace birdeye_viz::displays
+} // namespace rviz_birdeye_display::displays
 
 #include <pluginlib/class_list_macros.hpp> // NOLINT
-PLUGINLIB_EXPORT_CLASS(birdeye_viz::displays::BirdeyeDisplay, rviz_common::Display)
+PLUGINLIB_EXPORT_CLASS(rviz_birdeye_display::displays::BirdeyeDisplay, rviz_common::Display)
