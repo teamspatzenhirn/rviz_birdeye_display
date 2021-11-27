@@ -31,7 +31,7 @@ add_library(rviz_birdeye_display SHARED
         ${rviz_birdeye_display_source_files}
         )
 
-set_property(TARGET rviz_birdeye_display PROPERTY CXX_STANDARD 20)
+set_property(TARGET rviz_birdeye_display PROPERTY CXX_STANDARD 17)
 target_compile_options(rviz_birdeye_display PRIVATE -Wall -Wextra -Wpedantic)
 
 target_include_directories(rviz_birdeye_display PUBLIC
