@@ -13,14 +13,7 @@ find_package(sensor_msgs REQUIRED)
 
 find_package(OpenCV REQUIRED)
 
-
-set(rviz_birdeye_display_headers_to_moc
-        include/rviz_birdeye_display/BirdeyeDisplay.hpp
-        )
-
-foreach (header "${rviz_birdeye_display_headers_to_moc}")
-    qt5_wrap_cpp(rviz_birdeye_display_moc_files "${header}")
-endforeach ()
+set(CMAKE_AUTOMOC ON)
 
 set(rviz_birdeye_display_source_files
         src/rviz_birdeye_display/BirdeyeDisplay.cpp
