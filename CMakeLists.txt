@@ -4,6 +4,11 @@ project(rviz_birdeye_display)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 
+find_package(Qt6 COMPONENTS Widgets)
+if (NOT QT6_FOUND)
+    find_package(Qt5 REQUIRED COMPONENTS Widgets)
+endif()
+
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
@@ -17,10 +22,10 @@ set(CMAKE_AUTOMOC ON)
 
 set(rviz_birdeye_display_source_files
         src/rviz_birdeye_display/BirdeyeDisplay.cpp
+        include/rviz_birdeye_display/BirdeyeDisplay.hpp
         )
 
 add_library(rviz_birdeye_display SHARED
-        ${rviz_birdeye_display_moc_files}
         ${rviz_birdeye_display_source_files}
         )
 
@@ -30,7 +35,6 @@ target_compile_options(rviz_birdeye_display PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(rviz_birdeye_display PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-        ${Qt5Widgets_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
         )
 
@@ -40,6 +44,8 @@ target_link_libraries(rviz_birdeye_display PUBLIC
         opencv_core
         opencv_imgproc
         opencv_highgui
+	rviz_common::rviz_common
+	spatz_interfaces::spatz_interfaces__rosidl_typesupport_cpp
         )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -51,13 +57,13 @@ target_compile_definitions(rviz_birdeye_display PUBLIC "PLUGINLIB__DISABLE_BOOST
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 
-ament_target_dependencies(rviz_birdeye_display
-        PUBLIC
-        sensor_msgs
-        spatz_interfaces
-        rviz_common
-        rviz_rendering
-        )
+#target_link_libraries(rviz_birdeye_display
+#        PUBLIC
+#        sensor_msgs
+#        spatz_interfaces
+#        rviz_common
+#        rviz_rendering
+#        )
 
 ament_export_include_directories(include)
 ament_export_targets(rviz_birdeye_display HAS_LIBRARY_TARGET)
