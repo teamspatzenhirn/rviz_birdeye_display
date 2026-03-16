@@ -47,8 +47,8 @@ target_link_libraries(rviz_birdeye_display PUBLIC
         opencv_core
         opencv_imgproc
         opencv_highgui
-	rviz_common::rviz_common
-	spatz_interfaces::spatz_interfaces__rosidl_typesupport_cpp
+        rviz_common::rviz_common
+        spatz_interfaces::spatz_interfaces__rosidl_typesupport_cpp
         )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -59,14 +59,6 @@ target_compile_definitions(rviz_birdeye_display PRIVATE "rviz_birdeye_display_BU
 target_compile_definitions(rviz_birdeye_display PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
-
-#target_link_libraries(rviz_birdeye_display
-#        PUBLIC
-#        sensor_msgs
-#        spatz_interfaces
-#        rviz_common
-#        rviz_rendering
-#        )
 
 ament_export_include_directories(include)
 ament_export_targets(rviz_birdeye_display HAS_LIBRARY_TARGET)
